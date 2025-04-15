@@ -1,0 +1,38 @@
+name: 'pebblelog-backend'
+services:
+  db:
+    image: mariadb:11.6.2
+    env_file:
+      - ./env/db.env
+    ports:
+      - $DB_PORT:3306
+    volumes:
+      - $HOST_PROJECT_DIR/vols/db/data/:/var/lib/mysql/
+    user: $UID:$UID
+  adminer:
+    image: adminer:4.8.1-standalone
+    env_file:
+      - ./env/adminer.env
+    ports:
+      - $ADMINER_PORT:8080
+  proxy:
+    image: proxy
+    build:
+      context: .
+      dockerfile: ./Dockerfiles/proxy.Dockerfile
+    volumes:
+      - $HOST_PROJECT_DIR/../src/:/var/www/html/
+    ports:
+      - $PROXY_PORT:80
+  php-fpm:
+    image: php-fpm
+    build:
+      context: .
+      dockerfile: ./Dockerfiles/php-fpm.Dockerfile
+      args:
+        UID: $UID
+    volumes:
+      - $HOST_PROJECT_DIR/../src/:/var/www/html/
+      - $HOST_PROJECT_DIR/vols/php-fpm/user-home/:/home/www-data/
+    extra_hosts:
+      - host.docker.internal:host-gateway
